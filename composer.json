@@ -1,0 +1,21 @@
+{
+    "name": "jeeinn/qf_app_builder",
+    "description": "qianfan app builder php sdk base on openApi",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Jeeinn\\QfAppBuilder\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "jeeinn"
+        }
+    ],
+    "require": {
+        "guzzlehttp/guzzle": "^7.8"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.6"
+    }
+}
