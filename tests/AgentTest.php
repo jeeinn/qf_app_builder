@@ -1,14 +1,14 @@
 <?php
 
-use GuzzleHttp\Exception\GuzzleException;
 use Jeeinn\QfAppBuilder\Agent;
 use Jeeinn\QfAppBuilder\Utils;
 use PHPUnit\Framework\TestCase;
 
 final class AgentTest extends TestCase
 {
-    public string $appId = '369e0d11-7989-4d77-9b01-7b42e7171570';
-    public string $appToken = 'bce-v3/ALTAK-BjSeeRUVZOvqcjbpGLZRW/9a2b220ed50184067ba4f342dcbb94544c596d26';
+    // todo 执行测试用例时，请替换为真实可用的参数
+    public string $appId = 'your app id';
+    public string $appToken = 'your app token';
     
     /**
      * @command ./vendor/bin/phpunit --filter testNewConversation tests/
@@ -68,6 +68,30 @@ final class AgentTest extends TestCase
         $answer = $agent->talkStream($conversationId, $query, null, function ($part){
             echo Utils::formatMsg($part);
         });
+        echo Utils::formatMsg("answer: {$answer}");
+        $this->assertNotEmpty($answer);
+    }
+    
+    
+    /**
+     * @description 测试完整流程
+     * @command ./vendor/bin/phpunit --filter testComplete tests/
+     * @throws Exception
+     */
+    public function testComplete()
+    {
+        // 创建会话
+        $agent = new Agent($this->appId, $this->appToken);
+        $conversationId = $agent->newConversation();
+        echo Utils::formatMsg("conversation_id created, conversation_id: {$conversationId}");
+        $this->assertNotEmpty($conversationId);
+        // 上传文件
+        $fileId = $agent->uploadFile(__DIR__ . '/test.xlsx', $conversationId);
+        echo Utils::formatMsg("file uploaded, file id: {$fileId}");
+        $this->assertNotEmpty($fileId);
+        // 对话
+        $query = "我该如何描述和总结表格中的数据？";
+        $answer = $agent->talk($conversationId, $query, $fileId);
         echo Utils::formatMsg("answer: {$answer}");
         $this->assertNotEmpty($answer);
     }
