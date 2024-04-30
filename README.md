@@ -5,7 +5,7 @@ qianfan AppBuilder openApi sdk wrapper
 
 ## 安装
 ```php
-composer require jeeinn/qf-app-builder
+composer require jeeinn/qf_app_builder
 ```
 
 ## 示例
