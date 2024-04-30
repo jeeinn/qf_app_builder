@@ -1,6 +1,12 @@
 {
   "name": "jeeinn/qf_app_builder",
   "description": "qianfan app builder php sdk base on openApi",
+  "keywords": [
+    "qianfan",
+    "app-builder",
+    "sdk",
+    "wrapper"
+  ],
   "license": "MIT",
   "autoload": {
     "psr-4": {
@@ -9,7 +15,8 @@
   },
   "authors": [
     {
-      "name": "jeeinn"
+      "name": "jeeinn",
+      "email": "hello1024@qq.com"
     }
   ],
   "require": {
