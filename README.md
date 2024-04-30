@@ -34,6 +34,8 @@ echo Utils::formatMsg("answer: {$answer}");
 
 ## 测试用例
 
+请先修改 `tests/AgentTest.php` 中的 $appId 和 $appToken 参数
+
 ```bash
 ./vendor/bin/phpunit --filter testComplete tests/
 ```
