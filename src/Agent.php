@@ -3,6 +3,7 @@
 namespace Jeeinn\QfAppBuilder;
 
 use Exception;
+use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 
 class Agent
@@ -15,7 +16,7 @@ class Agent
     private string $uploadFileUri = '/v2/app/conversation/file/upload';
     private string $talkUri = '/v2/app/conversation/runs';
     
-    private \GuzzleHttp\Client $client;
+    private Client $client;
     private int $queryLengthLimit = 2000;
     
     /**
@@ -28,7 +29,7 @@ class Agent
         $this->appId = $appId;
         $this->appToken = $appToken;
         $this->baseUri = $baseUri ?: $this->baseUri;
-        $this->client = new \GuzzleHttp\Client([
+        $this->client = new Client([
             'base_uri' => $this->baseUri,
             'http_errors' => false, // 方便获取返回值
             'headers' => [
@@ -159,16 +160,17 @@ class Agent
     }
     
     /**
-     * @description 处理流式对话，返回对话答案
+     * @description 处理流式对话，返回最终对话答案
      * @author jeeinn 2024/04/29
      * @param string $conversationId
      * @param string $query
      * @param mixed $fileId
+     * @param callable|null $callback 支持传入回调函数用于处理对话返回的一段段内容
      * @return string
      * @throws Exception
      * @deprecated 暂无法很好的处理流的返回（测试不通过，有乱序问题）
      */
-    public function talkStream(string $conversationId, string $query, $fileId = null): string
+    public function talkStream(string $conversationId, string $query, $fileId = null, callable $callback = null): string
     {
         $fileIds = is_null($fileId) ? [] : (is_array($fileId) ? $fileId : [$fileId]);
         try {
@@ -198,27 +200,31 @@ class Agent
             // data: {"request_id": "3b4648f0-1ee8-4805-8465-d7767c566a2d", "date": "2024-04-29T09:31:05Z", "answer": "\n\n请问您是否有表格数据所在的Excel或Word文件需要上传？", "conversation_id": "0e180ce4-8947-457c-90ff-fb8dfeaba0ff", "message_id": "a9025e6c-47c6-4f2f-ab21-eabda4fa4759", "is_completion": false, "content": [{"event_code": 0, "event_message": "", "event_type": "ChatAgent", "event_id": "2", "event_status": "running", "content_type": "text", "outputs": {"text": "\n\n请问您是否有表格数据所在的Excel或Word文件需要上传？"}}]}
             // data: {"request_id": "3b4648f0-1ee8-4805-8465-d7767c566a2d", "date": "2024-04-29T09:31:05Z", "answer": "", "conversation_id": "0e180ce4-8947-457c-90ff-fb8dfeaba0ff", "message_id": "a9025e6c-47c6-4f2f-ab21-eabda4fa4759", "is_completion": false, "content": [{"event_code": 0, "event_message": "", "event_type": "ChatAgent", "event_id": "2", "event_status": "done", "content_type": "text", "outputs": {"text": ""}}]}
             // data: {"request_id": "3b4648f0-1ee8-4805-8465-d7767c566a2d", "date": "2024-04-29T09:31:05Z", "answer": "", "conversation_id": "0e180ce4-8947-457c-90ff-fb8dfeaba0ff", "message_id": "a9025e6c-47c6-4f2f-ab21-eabda4fa4759", "is_completion": true, "content": [{"event_code": 0, "event_message": "", "event_type": "ChatAgent", "event_id": "3", "event_status": "success", "content_type": "status", "outputs": {}}]}
-            $answer = '';
+            $answer = $lastBuffer = '';
             while (!$body->eof()) {
-                $line = $body->read(1024);
-                echo $line;
-                $line = trim($line, "\n\r");
-                if (empty($line)) continue;
-                $line = str_replace('data: ', '', $line);
-                
-                // echo $line . PHP_EOL;
-                $data = json_decode($line, true);
-                // echo '-------------'.PHP_EOL;
-                // var_dump($data);
-                if (json_last_error() == JSON_ERROR_NONE) {
-                    if (empty($data['answer'])) continue;
-                    $content = $data['answer'];
-                    echo $content . PHP_EOL;
-                    // flush();
-                    // ob_flush();
-                    $answer .= $content;
+                $buffer = $body->read(1024); // 读取 1KB 数据
+                if ($lastBuffer) $buffer .= $lastBuffer;
+                // echo "---start---\n$buffer\n---stop---\n";
+                $parts = preg_split('/\n/', $buffer); // 使用正则表达式分割
+                // print_r($parts);
+                $len = count($parts);
+                foreach ($parts as $k => $part) {
+                    // 处理每个部分
+                    $originalPart = $part;
+                    $part = trim($part, "\n\r");
+                    if (empty($part)) continue;
+                    $part = str_replace('data: ', '', $part);
+                    $data = json_decode($part, true);
+                    if (json_last_error() == JSON_ERROR_NONE) {
+                        if (empty($data['answer'])) continue;
+                        $content = $data['answer'];
+                        $answer .= $content;
+                        if (is_callable($callback)) $callback($content);
+                        $lastBuffer = '';
+                    } else {
+                        if ($k == $len - 1) $lastBuffer = $originalPart;
+                    }
                 }
-                
             }
             
             return $answer;

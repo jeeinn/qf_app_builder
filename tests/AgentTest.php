@@ -65,7 +65,9 @@ final class AgentTest extends TestCase
         
         $agent = new Agent($this->appId, $this->appToken);
         // $answer = $agent->talkStream($conversationId, $query, $fileId);
-        $answer = $agent->talkStream($conversationId, $query);
+        $answer = $agent->talkStream($conversationId, $query, null, function ($part){
+            echo Utils::formatMsg($part);
+        });
         echo Utils::formatMsg("answer: {$answer}");
         $this->assertNotEmpty($answer);
     }
