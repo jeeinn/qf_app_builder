@@ -59,3 +59,14 @@ PHPUnit 9.6.19 by Sebastian Bergmann and contributors.
 
 Time: 00:12.963, Memory: 8.00 MB
 ```
+
+## 方法列表
+
+* newConversation()
+* uploadFile($filePath, $conversationId)
+* talk($conversationId, $query, $fileId)
+* [deprecated] talkStream($conversationId, $query, $fileId)
+
+> 其中 talkStream() 方法暂时废弃，并没有很好的解决 stream 模式下的数据乱序问题，请使用 talk() 方法。
+
+有能力和精力的话，希望有人可以帮忙重新实现这个方法。
