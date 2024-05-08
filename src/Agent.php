@@ -62,9 +62,9 @@ class Agent
             }
             return $jsonData['conversation_id'];
         } catch (GuzzleException $e) {
-            throw new \Exception("[GuzzleException] {$e->getMessage()}\n[QfAppBuilder] 新建对话ID失败");
+            throw new \Exception("[GuzzleException] {$e->getMessage()}");
         } catch (Exception $e) {
-            throw new \Exception("[Exception] {$e->getMessage()}\n[QfAppBuilder] 新建对话ID失败");
+            throw new \Exception("[Exception] {$e->getMessage()}");
         }
     }
     
@@ -112,9 +112,9 @@ class Agent
             }
             return $jsonData['id'];
         } catch (GuzzleException $e) {
-            throw new \Exception("[GuzzleException] {$e->getMessage()}\n[QfAppBuilder] 上传文件失败");
+            throw new \Exception("[GuzzleException] {$e->getMessage()}");
         } catch (Exception $e) {
-            throw new \Exception("[Exception] {$e->getMessage()}\n[QfAppBuilder] 上传文件失败");
+            throw new \Exception("[Exception] {$e->getMessage()}");
         }
     }
     
@@ -153,9 +153,9 @@ class Agent
             // print_r($jsonData);
             return $jsonData['answer'];
         } catch (GuzzleException $e) {
-            throw new \Exception("[GuzzleException] {$e->getMessage()}\n[QfAppBuilder] 对话异常");
+            throw new \Exception("[GuzzleException] {$e->getMessage()}");
         } catch (Exception $e) {
-            throw new \Exception("[Exception] {$e->getMessage()}\n[QfAppBuilder] 对话异常");
+            throw new \Exception("[Exception] {$e->getMessage()}");
         }
     }
     
@@ -229,9 +229,9 @@ class Agent
             
             return $answer;
         } catch (GuzzleException $e) {
-            throw new \Exception("[GuzzleException] {$e->getMessage()}\n[QfAppBuilder] 流式对话异常");
+            throw new \Exception("[GuzzleException] {$e->getMessage()}");
         } catch (Exception $e) {
-            throw new \Exception("[Exception] {$e->getMessage()}\n[QfAppBuilder] 流式对话异常");
+            throw new \Exception("[Exception] {$e->getMessage()}");
         }
     }
 }
