@@ -130,16 +130,21 @@ class Agent
      */
     public function talk(string $conversationId, string $query, $fileId): string
     {
-        $fileIds = is_array($fileId) ? $fileId : [$fileId];
+        
+        $json = [
+            'app_id' => $this->appId,
+            'query' => mb_substr($query, 0, $this->queryLengthLimit, 'utf-8'),
+            'stream' => false,
+            'conversation_id' => $conversationId,
+        ];
+        if ($fileId) {
+            $fileIds = is_array($fileId) ? $fileId : [$fileId];
+            $json['file_ids'] = $fileIds;
+        }
+        
         try {
             $response = $this->client->request('POST', $this->talkUri, [
-                'json' => [
-                    'app_id' => $this->appId,
-                    'query' => mb_substr($query, 0, $this->queryLengthLimit, 'utf-8'),
-                    'stream' => false,
-                    'conversation_id' => $conversationId,
-                    'file_id' => $fileIds,
-                ],
+                'json' => $json,
             ]);
             
             $body = $response->getBody();
@@ -172,17 +177,21 @@ class Agent
      */
     public function talkStream(string $conversationId, string $query, $fileId = null, callable $callback = null): string
     {
-        $fileIds = is_null($fileId) ? [] : (is_array($fileId) ? $fileId : [$fileId]);
+        $json = [
+            'app_id' => $this->appId,
+            'query' => mb_substr($query, 0, $this->queryLengthLimit, 'utf-8'),
+            'stream' => true,
+            'conversation_id' => $conversationId,
+        ];
+        if ($fileId) {
+            $fileIds = is_array($fileId) ? $fileId : [$fileId];
+            $json['file_ids'] = $fileIds;
+        }
+        
         try {
             $response = $this->client->request('POST', $this->talkUri, [
                 'stream' => true,
-                'json' => [
-                    'app_id' => $this->appId,
-                    'query' => mb_substr($query, 0, $this->queryLengthLimit, 'utf-8'),
-                    'stream' => true,
-                    'conversation_id' => $conversationId,
-                    'file_id' => $fileIds,
-                ],
+                'json' => $json,
             ]);
             
             $body = $response->getBody();
