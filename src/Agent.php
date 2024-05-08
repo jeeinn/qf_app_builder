@@ -70,6 +70,7 @@ class Agent
     
     /**
      * @description 上传文件，返回文件id
+     * 注意，传入的路径需包含后缀名称，否则会报错：未知文件类型
      * @link https://cloud.baidu.com/doc/AppBuilder/s/flv2fur67
      * @author jeeinn 2024/04/29
      * @param string $filePath
@@ -130,7 +131,6 @@ class Agent
      */
     public function talk(string $conversationId, string $query, $fileId): string
     {
-        
         $json = [
             'app_id' => $this->appId,
             'query' => mb_substr($query, 0, $this->queryLengthLimit, 'utf-8'),
