@@ -165,17 +165,19 @@ class Agent
     }
     
     /**
-     * @description 处理流式对话，返回最终对话答案
+     * @description 处理流式对话，返回最终完整对话答案
      * @author jeeinn 2024/04/29
      * @param string $conversationId
      * @param string $query
      * @param mixed $fileId
-     * @param callable|null $callback 支持传入回调函数用于处理对话返回的一段段内容
-     * @return string
+     * @param callable|null $callback 支持传入回调函数用于处理对话返回的 EventStream 推理片段内容
+     * @param callable|null $callbackErr 当遇到错误时，会调用此回调函数。返回不能解析的原始 EventStream 推理片段内容
+     * @return string 返回完整的对话答案
      * @throws Exception
-     * @deprecated 暂无法很好的处理流的返回（测试不通过，有乱序问题）
+     // * @deprecated 暂无法很好的处理流的返回（测试不通过，有乱序问题）
+     * 已经处理乱序问题 2024/05/09
      */
-    public function talkStream(string $conversationId, string $query, $fileId = null, callable $callback = null): string
+    public function talkStream(string $conversationId, string $query, $fileId = null, callable $callback = null, callable $callbackErr = null): string
     {
         $json = [
             'app_id' => $this->appId,
@@ -195,7 +197,7 @@ class Agent
             ]);
             
             $body = $response->getBody();
-            if (empty($body)) {
+            if ($response->getStatusCode() != 200 || empty($body)) {
                 throw new \Exception("[Response] {$body}\n[QfAppBuilder] 流式对话异常");
             }
             
@@ -209,29 +211,30 @@ class Agent
             // data: {"request_id": "3b4648f0-1ee8-4805-8465-d7767c566a2d", "date": "2024-04-29T09:31:05Z", "answer": "\n\n请问您是否有表格数据所在的Excel或Word文件需要上传？", "conversation_id": "0e180ce4-8947-457c-90ff-fb8dfeaba0ff", "message_id": "a9025e6c-47c6-4f2f-ab21-eabda4fa4759", "is_completion": false, "content": [{"event_code": 0, "event_message": "", "event_type": "ChatAgent", "event_id": "2", "event_status": "running", "content_type": "text", "outputs": {"text": "\n\n请问您是否有表格数据所在的Excel或Word文件需要上传？"}}]}
             // data: {"request_id": "3b4648f0-1ee8-4805-8465-d7767c566a2d", "date": "2024-04-29T09:31:05Z", "answer": "", "conversation_id": "0e180ce4-8947-457c-90ff-fb8dfeaba0ff", "message_id": "a9025e6c-47c6-4f2f-ab21-eabda4fa4759", "is_completion": false, "content": [{"event_code": 0, "event_message": "", "event_type": "ChatAgent", "event_id": "2", "event_status": "done", "content_type": "text", "outputs": {"text": ""}}]}
             // data: {"request_id": "3b4648f0-1ee8-4805-8465-d7767c566a2d", "date": "2024-04-29T09:31:05Z", "answer": "", "conversation_id": "0e180ce4-8947-457c-90ff-fb8dfeaba0ff", "message_id": "a9025e6c-47c6-4f2f-ab21-eabda4fa4759", "is_completion": true, "content": [{"event_code": 0, "event_message": "", "event_type": "ChatAgent", "event_id": "3", "event_status": "success", "content_type": "status", "outputs": {}}]}
-            $answer = $lastBuffer = '';
+            $answer = $buffer = '';
             while (!$body->eof()) {
-                $buffer = $body->read(1024); // 读取 1KB 数据
-                if ($lastBuffer) $buffer .= $lastBuffer;
-                // echo "---start---\n$buffer\n---stop---\n";
-                $parts = preg_split('/\n/', $buffer); // 使用正则表达式分割
-                // print_r($parts);
-                $len = count($parts);
-                foreach ($parts as $k => $part) {
-                    // 处理每个部分
-                    $originalPart = $part;
-                    $part = trim($part, "\n\r");
-                    if (empty($part)) continue;
-                    $part = str_replace('data: ', '', $part);
-                    $data = json_decode($part, true);
+                // 读取 128byte 数据
+                $buffer .= $body->read(128);
+                
+                // 这里使用 while 是因为读取 n 个字节有可能同时读出 n 条 EventSource 消息
+                while (($pos = strpos($buffer, "\n\n")) !== false) {
+                    $eventMsg = substr($buffer, 0, $pos); // 一条 event 消息
+                    // echo Utils::formatMsg("event: {$eventMsg}");
+                    
+                    $buffer = substr($buffer, $pos + 2); // 剩余部分
+                    
+                    if (empty($eventMsg)) continue;
+                    $jsonString = str_replace('data: ', '', $eventMsg);
+                    $data = json_decode($jsonString, true);
                     if (json_last_error() == JSON_ERROR_NONE) {
                         if (empty($data['answer'])) continue;
                         $content = $data['answer'];
                         $answer .= $content;
                         if (is_callable($callback)) $callback($content);
-                        $lastBuffer = '';
                     } else {
-                        if ($k == $len - 1) $lastBuffer = $originalPart;
+                        // 记录错误信息
+                        // echo Utils::formatMsg("error: {$eventMsg}");
+                        if (is_callable($callbackErr)) $callbackErr($eventMsg); // 带有 data: 开头的原始数据
                     }
                 }
             }

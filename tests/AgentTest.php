@@ -61,13 +61,22 @@ final class AgentTest extends TestCase
     public function testTalkStream()
     {
         $conversationId = "0e180ce4-8947-457c-90ff-fb8dfeaba0ff";
-        $query = '你好，给我讲个笑话。';
+        $query = '你好，你是如何对我的数据进行安全处理的？';
         
         $agent = new Agent($this->appId, $this->appToken);
-        // $answer = $agent->talkStream($conversationId, $query, $fileId);
-        $answer = $agent->talkStream($conversationId, $query, null, function ($part){
-            echo Utils::formatMsg($part);
+        
+        ob_end_flush();
+        ob_start();
+        $answer = $agent->talkStream($conversationId, $query, null, function ($eventMsg){
+            echo Utils::formatMsg($eventMsg);
+            ob_flush();
+            flush();
+        }, function ($errInfo){
+            echo Utils::formatMsg($errInfo);
+            ob_flush();
+            flush();
         });
+        
         echo Utils::formatMsg("answer: {$answer}");
         $this->assertNotEmpty($answer);
     }
