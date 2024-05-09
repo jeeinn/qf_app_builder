@@ -54,11 +54,11 @@ class Agent
             
             $body = $response->getBody();
             if ($response->getStatusCode() != 200 || empty($body)) {
-                throw new \Exception("[Response] {$body}\n[QfAppBuilder] 新建对话ID失败");
+                throw new \Exception("[QfAppBuilder] 创建会话ID失败\n[Response] {$body}");
             }
             $jsonData = json_decode($body, true);
             if (!isset($jsonData['conversation_id'])) {
-                throw new \Exception("[Response] {$body}\n[QfAppBuilder] 新建对话ID失败");
+                throw new \Exception("[QfAppBuilder] 创建会话ID失败\n[Response] {$body}");
             }
             return $jsonData['conversation_id'];
         } catch (GuzzleException $e) {
@@ -80,7 +80,7 @@ class Agent
      */
     public function uploadFile(string $filePath, string $conversationId): string
     {
-        if (!is_file($filePath)) throw new \Exception('[QfAppBuilder] 请检查传入的文件');
+        if (!is_file($filePath)) throw new \Exception('[QfAppBuilder] 请检查传入的文件或路径');
         
         try {
             $response = $this->client->request('POST', $this->uploadFileUri, [
@@ -105,11 +105,11 @@ class Agent
             
             $body = $response->getBody();
             if ($response->getStatusCode() != 200 || empty($body)) {
-                throw new \Exception("[Response] {$body}\n[QfAppBuilder] 上传文件失败");
+                throw new \Exception("[QfAppBuilder] 上传文件失败\n[Response] {$body}");
             }
             $jsonData = json_decode($body, true);
             if (!isset($jsonData['id'])) {
-                throw new \Exception("[Response] {$body}\n[QfAppBuilder] 上传文件失败");
+                throw new \Exception("[QfAppBuilder] 上传文件失败\n[Response] {$body}");
             }
             return $jsonData['id'];
         } catch (GuzzleException $e) {
@@ -149,11 +149,11 @@ class Agent
             
             $body = $response->getBody();
             if ($response->getStatusCode() != 200 || empty($body)) {
-                throw new \Exception("[Response] {$body}\n[QfAppBuilder] 对话异常");
+                throw new \Exception("[QfAppBuilder] 对话异常\n[Response] {$body}");
             }
             $jsonData = json_decode($body, true);
             if (!isset($jsonData['conversation_id'])) {
-                throw new \Exception("[Response] {$body}\n[QfAppBuilder] 对话异常");
+                throw new \Exception("[QfAppBuilder] 对话异常\n[Response] {$body}");
             }
             // print_r($jsonData);
             return $jsonData['answer'];
@@ -174,7 +174,7 @@ class Agent
      * @param callable|null $callbackErr 当遇到错误时，会调用此回调函数。返回不能解析的原始 EventStream 推理片段内容
      * @return string 返回完整的对话答案
      * @throws Exception
-     // * @deprecated 暂无法很好的处理流的返回（测试不通过，有乱序问题）
+     * // * @deprecated 暂无法很好的处理流的返回（测试不通过，有乱序问题）
      * 已经处理乱序问题 2024/05/09
      */
     public function talkStream(string $conversationId, string $query, $fileId = null, callable $callback = null, callable $callbackErr = null): string
@@ -198,7 +198,7 @@ class Agent
             
             $body = $response->getBody();
             if ($response->getStatusCode() != 200 || empty($body)) {
-                throw new \Exception("[Response] {$body}\n[QfAppBuilder] 流式对话异常");
+                throw new \Exception("[QfAppBuilder] 流式对话异常\n[Response] {$body}");
             }
             
             // data: {"request_id": "3b4648f0-1ee8-4805-8465-d7767c566a2d", "date": "2024-04-29T09:30:59Z", "answer": "", "conversation_id": "0e180ce4-8947-457c-90ff-fb8dfeaba0ff", "message_id": "a9025e6c-47c6-4f2f-ab21-eabda4fa4759", "is_completion": false, "content": [{"event_code": 0, "event_message": "", "event_type": "function_call", "event_id": "0", "event_status": "done", "content_type": "function_call", "outputs": {"text": {"arguments": {}, "component_code": "ChatAgent", "component_name": "聊天助手"}}}]}
