@@ -3,6 +3,8 @@ qianfan AppBuilder openApi sdk wrapper
 
 百度千帆 AppBuilder openApi sdk wrapper
 
+官方文档地址：https://cloud.baidu.com/doc/AppBuilder/s/klv2eywua
+
 ## 安装
 ```php
 composer require jeeinn/qf_app_builder
@@ -22,6 +24,8 @@ $conversationId = $agent->newConversation();
 echo Utils::formatMsg("conversation_id created, conversation_id: {$conversationId}");
 
 // 上传文件
+// 注意，在实际测试中发现传入的路径需包含后缀名称 2024/5/9
+// 否则千帆会报错：未知文件类型
 $fileId = $agent->uploadFile(__DIR__ . '/your_test_file.xlsx', $conversationId);
 echo Utils::formatMsg("file uploaded, file id: {$fileId}");
 
@@ -30,6 +34,21 @@ $query = "我该如何描述和总结表格中的数据？";
 $answer = $agent->talk($conversationId, $query, $fileId);
 echo Utils::formatMsg("answer: {$answer}");
 
+// 流式对话
+$query = '你好，你是如何对我的数据进行安全处理的？';
+ob_end_flush();
+ob_start();
+$answer = $agent->talkStream($conversationId, $query, null, function ($eventMsg){
+    echo Utils::formatMsg($eventMsg);
+    ob_flush();
+    flush();
+}, function ($errInfo){
+    echo Utils::formatMsg($errInfo);
+    ob_flush();
+    flush();
+});
+
+echo Utils::formatMsg("answer: {$answer}");
 ```
 
 ## 测试用例
@@ -65,8 +84,10 @@ Time: 00:12.963, Memory: 8.00 MB
 * newConversation()
 * uploadFile($filePath, $conversationId)
 * talk($conversationId, $query, $fileId)
-* [deprecated] talkStream($conversationId, $query, $fileId)
+* talkStream($conversationId, $query, $fileId, $callback, $callbackErr)
 
-> 其中 talkStream() 方法暂时废弃，并没有很好的解决 stream 模式下的数据乱序问题，请使用 talk() 方法。
+> ~~其中 talkStream() 方法暂时废弃，并没有很好的解决 stream 模式下的数据乱序问题，请使用 talk() 方法。~~
 
-有能力和精力的话，希望有人可以帮忙重新实现这个方法。
+~~有能力和精力的话，希望有人可以帮忙重新实现这个方法。~~
+
+2024/5/9： 测试 `talkStream()` 方法已经可以正常调用，方便自己重新组装 [EventStream](https://developer.mozilla.org/zh-CN/docs/Web/API/Server-sent_events/Using_server-sent_events) 数据流。
